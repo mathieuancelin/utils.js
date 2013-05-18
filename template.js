@@ -1,6 +1,31 @@
 if (typeof Mustache === 'undefined') {
-  throw '[template.js] Mustache is needed to use template.js. Please import it';
+  console.error('[template.js] Mustache might be needed to use template.js.');
 }
+if (typeof _ === 'undefined') {
+  console.error('[template.js] Lodash might be needed to use template.js.');
+}
+if ((typeof _ === 'undefined') && (typeof Mustache === 'undefined')) {
+  throw '[template.js] Lodash and/or Mustache are needed to use template.js. Please import it';
+}
+var TemplateSettings = (function() {
+  var mustache = (typeof Mustache !== 'undefined');
+  var useMustache = function(value) {
+    if(typeof value !== 'undefined') {
+      mustache = value;
+    }
+    return mustache;
+  };
+  var useLodash = function(value) {
+    if(typeof value !== 'undefined') {
+      mustache = !value;
+    }
+    return !mustache;
+  };
+  return {
+    useMustache: useMustache,
+    useLodash: useLodash
+  };
+})();
 var Template = (function() {
   var UNDEFINED = 'undefined';
   var STRING = 'string';
@@ -12,14 +37,28 @@ var Template = (function() {
   var isNotObject    = function(obj) { return !isObject(obj); };
   var isNotUndefined = function(obj) { return !isUndefined(obj); };
   var firstSelector = 'template:first, script[type="text/html-template"]:first, [data-type=template]:first';
+  var compileTemplate = function(template) {
+    if (TemplateSettings.useMustache()) {
+      return Mustache.compile(template);
+    } else {
+      return _.template(template);
+    }
+  };
+  var renderTemplate = function(template, view, partials) {
+    if (TemplateSettings.useMustache()) {
+      return Mustache.render(template, view, partials);
+    } else {
+      return _.template(template, view);
+    }
+  };
   var errorMessage = function(id) {
-    return Mustache.render('[template.js] An error occured, template with id: "{{id}}" does not exist', {id:id});
+    return '[template.js] An error occured, template with id: "' + id + '" does not exist';
   };
   var errorJquery = function(selector, id) {
-    return Mustache.render('[template.js] An error occured while creating template: new Template("{{id}}"), possible wrong jQuery selector ( {{selector}} )', {id:id, selector:selector});
+    return '[template.js] An error occured while creating template: new Template("' + id + '"), possible wrong jQuery selector ( ' + selector + ' )';
   };
   var idSelector = function(id) {
-    return Mustache.render('template#{{id}}, script[type="text/html-template"]#{{id}}, [data-type=template]#{{id}}', {id: id});
+    return 'template#' + id + ', script[type="text/html-template"]#' + id + ', [data-type=template]#' + id;
   };
   var Template = function(id) {
     var errors = [];
@@ -58,15 +97,15 @@ var Template = (function() {
     if (errors.length > 0) { htmlTemplate = errors.join('<br/>'); }
     return {
       renderWith: function(view, partials) {
-        return Mustache.render(htmlTemplate, view, partials);
+        return renderTemplate(htmlTemplate, view, partials);
       },
       compile: function() {
-        return Mustache.compile(htmlTemplate);
+        return compileTemplate(htmlTemplate);
       }
     };
   };
 
-  if (isNotUndefined(jQuery)) { 
+  if (isNotUndefined(jQuery)) {
     (function($) {
       var errorTemplate = function(id) {
         return {

@@ -34,41 +34,45 @@ var Promise = function() {
 	};
 	var map = function(closure) {
 		var promise = new Promise();
-		if (typeof closure === 'function')
-		onRedeem(function(value) {
-			promise.apply(closure(promiseValue));
-		});
+		if (typeof closure === 'function') {
+			onRedeem(function(value) {
+				promise.apply(closure(promiseValue));
+			});
+		}
 		return promise;
 	};
 	var flatMap = function(closure) {
 		var promise = new Promise();
-		if (typeof closure === 'function')
-		onRedeem(function(value) {
-			var p2 = closure(promiseValue);
-			p2.onRedeem(function(value2) {
-				promise.apply(value2);
+		if (typeof closure === 'function') {
+			onRedeem(function(value) {
+				var p2 = closure(promiseValue);
+				p2.onRedeem(function(value2) {
+					promise.apply(value2);
+				});
 			});
-		});
+		}
 		return promise;
 	};
 	var filter = function(predicate) {
 		var promise = new Promise();
-		if (typeof predicate === 'function')
-		onRedeem(function(value) {
-			if (predicate(promiseValue)) {
-				promise.apply(promiseValue);
-			}
-		});
+		if (typeof predicate === 'function') {
+			onRedeem(function(value) {
+				if (predicate(promiseValue)) {
+					promise.apply(promiseValue);
+				}
+			});
+		}
 		return promise;
 	};
 	var filterNot = function(predicate) {
 		var promise = new Promise();
-		if (typeof predicate === 'function')
-		onRedeem(function(value) {
-			if (!predicate(promiseValue)) {
-				promise.apply(promiseValue);
-			}
-		});
+		if (typeof predicate === 'function') {
+			onRedeem(function(value) {
+				if (!predicate(promiseValue)) {
+					promise.apply(promiseValue);
+				}
+			});
+		}
 		return promise;
 	};
 	var then = map;
@@ -86,21 +90,27 @@ var Promise = function() {
 		then: then,
 		andThen: andThen	
 	};
+};	
+Promise.map = function() {
+	var finalPromise = new Promise();
+	if(typeof arguments !== 'undefined') {
+		var promises = [];
+		for (var i = 0; i < arguments.length; i++) {
+			promises.push(arguments[i]);
+		}
+		var results = [];
+		var count = promises.length;
+		promises.forEach(function(promise) {
+			if (typeof promise.onRedeem === 'function') {
+				promise.onRedeem(function(result) {
+					results.push(result);
+					count--;
+					if (count <= 0) {
+						finalPromise.apply(results);
+					}
+				});
+			}
+		});
+	}
+	return finalPromise;
 };
-
-/**
-var httpGet = function(url) {
-	var promise = Promise();
-	$.get(url, function(data) {
-		promise.apply(data);
-	});
-	return promise;
-};
-
-httpGet("/test").then(function(data) {
-	console.log("received : " + data);
-});**/
-
-
-
-	
